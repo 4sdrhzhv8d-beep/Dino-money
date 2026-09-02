@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dino Trader : Le Jeu de la Survie Financière</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Outfit', sans-serif;
+}
+
+body {
+    background: radial-gradient(circle at center, #1a1c24 0%, #0d0e12 100%);
+    color: #f1f5f9;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+    touch-action: manipulation;
+    overflow-x: hidden;
+}
+
+.app-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 900px;
+}
+
+.header-panel {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 15px;
+    padding: 0 10px;
+}
+
+.logo-area h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #22c55e 0%, #10b981 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+}
+
+.logo-area p {
+    font-size: 0.85rem;
+    color: #94a3b8;
+}
+
+.market-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.2);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    color: #22c55e;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    background-color: #22c55e;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #22c55e;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(0.95); opacity: 0.8; }
+    50% { transform: scale(1.15); opacity: 1; box-shadow: 0 0 12px #22c55e; }
+    100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+.game-container {
+    position: relative;
+    width: 100%;
+    background: #13151a;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    padding: 15px;
+    overflow: hidden;
+}
+
+canvas {
+    background: linear-gradient(180deg, #0f1117 0%, #171a23 100%);
+    border-radius: 10px;
+    display: block;
+    width: 100%;
+    height: auto;
+    box-shadow: inset 0 0 30px rgba(0,0,0,0.6);
+}
+
+.dashboard-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    width: 100%;
+    margin-top: 15px;
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 12px 16px;
+    border-radius: 10px;
+    text-align: left;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.stat-value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #f8fafc;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.stat-value.profit {
+    color: #22c55e;
+}
+
+.instructions-footer {
+    margin-top: 15px;
+    text-align: center;
+    font-size: 0.85rem;
+    color: #94a3b8;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px dashed rgba(255, 255, 255, 0.08);
+    width: 100%;
+}
+
+.instructions-footer strong {
+    color: #38bdf8;
+}
+</style>
+</head>
+<body>
+
+<div class="app-wrapper">
+    <div class="header-panel">
+        <div class="logo-area">
+            <h1>Dino Trader</h1>
+            <p>HFT / Risk Management Simulation</p>
+        </div>
+        <div class="market-status">
+            <div class="status-dot"></div>
+            <span>MARCHÉ ACTIF</span>
+        </div>
+    </div>
+
+    <div class="game-container">
+        <canvas id="gameCanvas" width="800" height="400"></canvas>
+    </div>
+
+    <div class="dashboard-stats">
+        <div class="stat-card">
+            <div class="stat-label">Profit en Cours</div>
+            <div class="stat-value profit" id="uiProfit">0 K $</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Meilleur Score (ATH)</div>
+            <div class="stat-value" id="uiHigh">0 K $</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Vitesse d'Exécution</div>
+            <div class="stat-value" id="uiSpeed">8.0x</div>
+        </div>
+    </div>
+
+    <div class="instructions-footer">
+        Touchez l'<strong>écran</strong> ou appuyez sur <strong>ESPACE / HAUT</strong> pour sauter par-dessus les bougies de Krash.
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+let score = 0;
+let highScore = 0;
+let gameSpeed = 8;
+let gameOver = false;
+
+const groundY = 330;
+
+// Trader Personnage Haut de Gamme (Vectoriel)
+const dino = {
+    x: 70,
+    y: groundY - 85,
+    width: 60,
+    height: 85,
+    vy: 0,
+    jumpSpeed: -15,
+    gravity: 0.85,
+    isJumping: false,
+
+    update: function() {
+        this.vy += this.gravity;
+        this.y += this.vy;
+
+        if (this.y >= groundY - this.height) {
+            this.y = groundY - this.height;
+            this.isJumping = false;
+            this.vy = 0;
+        }
+    },
+
+    draw: function() {
+        ctx.save();
+        ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+        
+        if (this.isJumping) {
+            ctx.rotate(this.vy * 0.025);
+        }
+
+        const w = this.width;
+        const h = this.height;
+
+        // Ombre portée du billet
+        ctx.shadowColor = "rgba(34, 197, 94, 0.4)";
+        ctx.shadowBlur = 12;
+
+        // Corps du billet de banque (Design Premium Vert Émeraude)
+        const grad = ctx.createLinearGradient(-w/2, -h/2, w/2, h/2);
+        grad.addColorStop(0, "#166534");
+        grad.addColorStop(0.5, "#15803d");
+        grad.addColorStop(1, "#14532d");
+        ctx.fillStyle = grad;
+        ctx.fillRect(-w/2, -h/2, w, h);
+        
+        ctx.shadowBlur = 0; // Désactiver l'ombre pour les détails
+
+        // Ornements extérieurs élégants
+        ctx.strokeStyle = "#4ade80";
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(-w/2 + 4, -h/2 + 4, w - 8, h - 8);
+
+        // Motifs décoratifs dans les coins
+        ctx.fillStyle = "#4ade80";
+        ctx.fillRect(-w/2 + 4, -h/2 + 4, 6, 6);
+        ctx.fillRect(w/2 - 10, -h/2 + 4, 6, 6);
+        ctx.fillRect(-w/2 + 4, h/2 - 10, 6, 6);
+        ctx.fillRect(w/2 - 10, h/2 - 10, 6, 6);
+
+        // Symbole central ($) raffiné
+        ctx.fillStyle = "#f0fdf4";
+        ctx.font = "bold 28px 'Outfit', sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("$", 0, 1);
+
+        // Lunettes de soleil de Trader minimalistes (effet cool)
+        ctx.fillStyle = "#0f172a";
+        ctx.fillRect(-14, -18, 10, 6);
+        ctx.fillRect(4, -18, 10, 6);
+        ctx.strokeStyle = "#4ade80";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(-14, -18, 10, 6);
+        ctx.strokeRect(4, -18, 10, 6);
+
+        ctx.restore();
+    }
+};
+
+// Obstacles Chandeliers Boursiers (Rouge Alerte / Krash)
+let obstacles = [];
+let spawnTimer = 0;
+let nextSpawnTime = 65;
+
+class Obstacle {
+    constructor() {
+        this.width = 42;
+        this.height = 75 + Math.random() * 35;
+        this.x = canvas.width;
+        this.y = groundY - this.height;
+    }
+
+    update() {
+        this.x -= gameSpeed;
+    }
+
+    draw() {
+        // Mèche supérieure et inférieure
+        ctx.strokeStyle = "#f87171";
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(this.x + this.width / 2, this.y - 18);
+        ctx.lineTo(this.x + this.width / 2, this.y + this.height + 18);
+        ctx.stroke();
+
+        // Corps de la bougie baissière (Krash)
+        const candleGrad = ctx.createLinearGradient(this.x, this.y, this.x + this.width, this.y + this.height);
+        candleGrad.addColorStop(0, "#dc2626");
+        candleGrad.addColorStop(1, "#991b1b");
+        ctx.fillStyle = candleGrad;
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+
+        // Bordure lumineuse subtile
+        ctx.strokeStyle = "#fca5a5";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(this.x, this.y, this.width, this.height);
+
+        // Texte vertical KRASH
+        ctx.save();
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 10px 'Outfit', sans-serif";
+        ctx.textAlign = "center";
+        ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText("KRASH", 0, 3.5);
+        ctx.restore();
+    }
+}
+
+function triggerAction() {
+    if (gameOver) {
+        resetGame();
+    } else if (!dino.isJumping) {
+        dino.vy = dino.jumpSpeed;
+        dino.isJumping = true;
+    }
+}
+
+window.addEventListener("keydown", function(e) {
+    if (e.code === "Space" || e.code === "ArrowUp") {
+        e.preventDefault();
+        triggerAction();
+    }
+});
+
+canvas.addEventListener("touchstart", function(e) {
+    e.preventDefault();
+    triggerAction();
+}, { passive: false });
+
+function resetGame() {
+    score = 0;
+    gameSpeed = 8;
+    obstacles = [];
+    spawnTimer = 0;
+    gameOver = false;
+    dino.y = groundY - dino.height;
+    dino.vy = 0;
+    dino.isJumping = false;
+}
+
+function gameLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Grille de fond dynamique style terminal de trading
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.025)";
+    ctx.lineWidth = 1;
+    for (let i = 0; i < canvas.width; i += 50) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, groundY);
+        ctx.stroke();
+    }
+    for (let j = 40; j < groundY; j += 40) {
+        ctx.beginPath();
+        ctx.moveTo(0, j);
+        ctx.lineTo(canvas.width, j);
+        ctx.stroke();
+    }
+
+    // Ligne de tendance de fond (Courbe haussière subtile)
+    ctx.strokeStyle = "rgba(34, 197, 94, 0.1)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, groundY - 50);
+    ctx.bezierCurveTo(200, groundY - 120, 500, groundY - 20, canvas.width, groundY - 100);
+    ctx.stroke();
+
+    // Sol du marché financier avec effet lumineux
+    ctx.shadowColor = "#22c55e";
+    ctx.shadowBlur = 10;
+    ctx.strokeStyle = "#22c55e";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(0, groundY);
+    ctx.lineTo(canvas.width, groundY);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    if (!gameOver) {
+        dino.update();
+
+        // Évolution de la vitesse
+        gameSpeed = 8 + Math.floor(score / 400) * 0.6;
+
+        spawnTimer++;
+        if (spawnTimer > nextSpawnTime) {
+            obstacles.push(new Obstacle());
+            spawnTimer = 0;
+            nextSpawnTime = Math.floor(Math.random() * 30) + Math.max(30, 65 - (gameSpeed * 1.8));
+        }
+
+        for (let i = obstacles.length - 1; i >= 0; i--) {
+            obstacles[i].update();
+            obstacles[i].draw();
+
+            if (obstacles[i].x + obstacles[i].width < 0) {
+                obstacles.splice(i, 1);
+                score += 40;
+                continue;
+            }
+
+            // Détection de collision précise
+            if (
+                dino.x + 10 < obstacles[i].x + obstacles[i].width - 6 &&
+                dino.x + dino.width - 10 > obstacles[i].x + 6 &&
+                dino.y + 8 < obstacles[i].y + obstacles[i].height - 4 &&
+                dino.y + dino.height - 6 > obstacles[i].y + 4
+            ) {
+                gameOver = true;
+                if (score > highScore) {
+                    highScore = score;
+                }
+            }
+        }
+
+        score += 0.25;
+        dino.draw();
+
+        // Mise à jour de l'interface en temps réel
+        document.getElementById("uiProfit").innerText = Math.floor(score) + " K $";
+        document.getElementById("uiHigh").innerText = Math.floor(highScore) + " K $";
+        document.getElementById("uiSpeed").innerText = gameSpeed.toFixed(1) + "x";
+
+    } else {
+        // Overlay de Game Over stylisé Cyberpunk / Finance
+        ctx.fillStyle = "rgba(13, 14, 18, 0.88)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "#ef4444";
+        ctx.font = "bold 34px 'Outfit', sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("CRASH BOURSIER — LIQUIDATION", canvas.width / 2, canvas.height / 2 - 50);
+
+        ctx.fillStyle = "#f8fafc";
+        ctx.font = "18px 'Outfit', sans-serif";
+        ctx.fillText("Profit Final : " + Math.floor(score) + " K $", canvas.width / 2, canvas.height / 2 - 5);
+
+        ctx.fillStyle = "#22c55e";
+        ctx.font = "600 16px 'Outfit', sans-serif";
+        ctx.fillText("Meilleur Score : " + Math.floor(highScore) + " K $", canvas.width / 2, canvas.height / 2 + 30);
+
+        ctx.fillStyle = "#94a3b8";
+        ctx.font = "14px 'Outfit', sans-serif";
+        ctx.fillText("Touchez l'écran ou appuyez sur ESPACE pour relancer une position", canvas.width / 2, canvas.height / 2 + 75);
+        ctx.textAlign = "left";
+    }
+
+    requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+</script>
+</body>
+</html>
