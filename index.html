@@ -191,7 +191,7 @@ canvas {
     </div>
 
     <div class="instructions-footer">
-        Touchez l'<strong>écran</strong> ou appuyez sur <strong>ESPACE / HAUT</strong> pour sauter par-dessus les bougies de Krash.
+        Touchez l'<strong>écran</strong> ou appuyez <strong>deux fois sur ESPACE / HAUT</strong> pour effectuer un double saut !
     </div>
 </div>
 
@@ -206,16 +206,16 @@ let gameOver = false;
 
 const groundY = 330;
 
-// Trader Personnage Haut de Gamme (Vectoriel)
 const dino = {
     x: 70,
     y: groundY - 85,
     width: 60,
     height: 85,
     vy: 0,
-    jumpSpeed: -15,
+    jumpSpeed: -14,
     gravity: 0.85,
-    isJumping: false,
+    jumpCount: 0,
+    maxJumps: 2,
 
     update: function() {
         this.vy += this.gravity;
@@ -223,27 +223,34 @@ const dino = {
 
         if (this.y >= groundY - this.height) {
             this.y = groundY - this.height;
-            this.isJumping = false;
+            this.jumpCount = 0;
             this.vy = 0;
         }
+    },
+
+    jump: function() {
+        if (this.jumpCount < this.maxJumps) {
+            this.vy = this.jumpSpeed;
+            this.jumpCount++;
+            return true;
+        }
+        return false;
     },
 
     draw: function() {
         ctx.save();
         ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
         
-        if (this.isJumping) {
+        if (this.jumpCount > 0) {
             ctx.rotate(this.vy * 0.025);
         }
 
         const w = this.width;
         const h = this.height;
 
-        // Ombre portée du billet
         ctx.shadowColor = "rgba(34, 197, 94, 0.4)";
         ctx.shadowBlur = 12;
 
-        // Corps du billet de banque (Design Premium Vert Émeraude)
         const grad = ctx.createLinearGradient(-w/2, -h/2, w/2, h/2);
         grad.addColorStop(0, "#166534");
         grad.addColorStop(0.5, "#15803d");
@@ -251,28 +258,24 @@ const dino = {
         ctx.fillStyle = grad;
         ctx.fillRect(-w/2, -h/2, w, h);
         
-        ctx.shadowBlur = 0; // Désactiver l'ombre pour les détails
+        ctx.shadowBlur = 0;
 
-        // Ornements extérieurs élégants
         ctx.strokeStyle = "#4ade80";
         ctx.lineWidth = 1.5;
         ctx.strokeRect(-w/2 + 4, -h/2 + 4, w - 8, h - 8);
 
-        // Motifs décoratifs dans les coins
         ctx.fillStyle = "#4ade80";
         ctx.fillRect(-w/2 + 4, -h/2 + 4, 6, 6);
         ctx.fillRect(w/2 - 10, -h/2 + 4, 6, 6);
         ctx.fillRect(-w/2 + 4, h/2 - 10, 6, 6);
         ctx.fillRect(w/2 - 10, h/2 - 10, 6, 6);
 
-        // Symbole central ($) raffiné
         ctx.fillStyle = "#f0fdf4";
         ctx.font = "bold 28px 'Outfit', sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText("$", 0, 1);
 
-        // Lunettes de soleil de Trader minimalistes (effet cool)
         ctx.fillStyle = "#0f172a";
         ctx.fillRect(-14, -18, 10, 6);
         ctx.fillRect(4, -18, 10, 6);
@@ -285,7 +288,6 @@ const dino = {
     }
 };
 
-// Obstacles Chandeliers Boursiers (Rouge Alerte / Krash)
 let obstacles = [];
 let spawnTimer = 0;
 let nextSpawnTime = 65;
@@ -303,7 +305,6 @@ class Obstacle {
     }
 
     draw() {
-        // Mèche supérieure et inférieure
         ctx.strokeStyle = "#f87171";
         ctx.lineWidth = 2.5;
         ctx.beginPath();
@@ -311,19 +312,16 @@ class Obstacle {
         ctx.lineTo(this.x + this.width / 2, this.y + this.height + 18);
         ctx.stroke();
 
-        // Corps de la bougie baissière (Krash)
         const candleGrad = ctx.createLinearGradient(this.x, this.y, this.x + this.width, this.y + this.height);
         candleGrad.addColorStop(0, "#dc2626");
         candleGrad.addColorStop(1, "#991b1b");
         ctx.fillStyle = candleGrad;
         ctx.fillRect(this.x, this.y, this.width, this.height);
 
-        // Bordure lumineuse subtile
         ctx.strokeStyle = "#fca5a5";
         ctx.lineWidth = 1;
         ctx.strokeRect(this.x, this.y, this.width, this.height);
 
-        // Texte vertical KRASH
         ctx.save();
         ctx.fillStyle = "#ffffff";
         ctx.font = "bold 10px 'Outfit', sans-serif";
@@ -338,9 +336,8 @@ class Obstacle {
 function triggerAction() {
     if (gameOver) {
         resetGame();
-    } else if (!dino.isJumping) {
-        dino.vy = dino.jumpSpeed;
-        dino.isJumping = true;
+    } else {
+        dino.jump();
     }
 }
 
@@ -364,13 +361,12 @@ function resetGame() {
     gameOver = false;
     dino.y = groundY - dino.height;
     dino.vy = 0;
-    dino.isJumping = false;
+    dino.jumpCount = 0;
 }
 
 function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Grille de fond dynamique style terminal de trading
     ctx.strokeStyle = "rgba(255, 255, 255, 0.025)";
     ctx.lineWidth = 1;
     for (let i = 0; i < canvas.width; i += 50) {
@@ -386,7 +382,6 @@ function gameLoop() {
         ctx.stroke();
     }
 
-    // Ligne de tendance de fond (Courbe haussière subtile)
     ctx.strokeStyle = "rgba(34, 197, 94, 0.1)";
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -394,7 +389,6 @@ function gameLoop() {
     ctx.bezierCurveTo(200, groundY - 120, 500, groundY - 20, canvas.width, groundY - 100);
     ctx.stroke();
 
-    // Sol du marché financier avec effet lumineux
     ctx.shadowColor = "#22c55e";
     ctx.shadowBlur = 10;
     ctx.strokeStyle = "#22c55e";
@@ -408,7 +402,6 @@ function gameLoop() {
     if (!gameOver) {
         dino.update();
 
-        // Évolution de la vitesse
         gameSpeed = 8 + Math.floor(score / 400) * 0.6;
 
         spawnTimer++;
@@ -428,7 +421,6 @@ function gameLoop() {
                 continue;
             }
 
-            // Détection de collision précise
             if (
                 dino.x + 10 < obstacles[i].x + obstacles[i].width - 6 &&
                 dino.x + dino.width - 10 > obstacles[i].x + 6 &&
@@ -445,13 +437,11 @@ function gameLoop() {
         score += 0.25;
         dino.draw();
 
-        // Mise à jour de l'interface en temps réel
         document.getElementById("uiProfit").innerText = Math.floor(score) + " K $";
         document.getElementById("uiHigh").innerText = Math.floor(highScore) + " K $";
         document.getElementById("uiSpeed").innerText = gameSpeed.toFixed(1) + "x";
 
     } else {
-        // Overlay de Game Over stylisé Cyberpunk / Finance
         ctx.fillStyle = "rgba(13, 14, 18, 0.88)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -471,7 +461,7 @@ function gameLoop() {
         ctx.fillStyle = "#94a3b8";
         ctx.font = "14px 'Outfit', sans-serif";
         ctx.fillText("Touchez l'écran ou appuyez sur ESPACE pour relancer une position", canvas.width / 2, canvas.height / 2 + 75);
-        ctx.textAlign = "left";
+        ctx.textAlign.left;
     }
 
     requestAnimationFrame(gameLoop);
