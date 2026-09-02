@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dino Trader - Jeu Web</title>
+    <style>
+        /* ==========================================
+           1. STYLES CSS & REMARQUES DE MISE EN PAGE
+           ========================================== */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+            font-size: 1.5rem;
+            color: #4CAF50;
+        }
+
+        #gameCanvas {
+            border: 2px solid #ffffff;
+            background-color: #f4f4f4;
+            max-width: 100%;
+            height: auto;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
+        .instructions {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #cccccc;
+            text-align: center;
+            max-width: 400px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==========================================
+       2. STRUCTURE HTML DU JEU
+       ========================================== -->
+    <h1>Dino Trader</h1>
+    
+    <!-- Zone d'affichage du canvas pour le jeu -->
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    
+    <div class="instructions">
+        <p>Appuie sur <strong>Espace</strong> ou clique pour sauter par-dessus les obstacles financiers !</p>
+    </div>
+
+    <!-- ==========================================
+       3. LOGIQUE JAVASCRIPT & REMARQUES DU CODE
+       ========================================== -->
+    <script>
+        /* REMARQUE ARCHITECTURE : 
+          Ce script regroupe la logique du jeu (adaptée depuis Pygame/Python vers HTML5 Canvas JS) 
+          pour permettre un déploiement direct et autonome sur un unique fichier index.html via GitHub Pages.
+        */
+
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        // Paramètres du joueur (le Dino)
+        let dino = {
+            x: 50,
+            y: 300,
+            width: 40,
+            height: 40,
+            dy: 0,
+            jumpPower: -10,
+            gravity: 0.6,
+            grounded: true,
+            color: "#4CAF50"
+        };
+
+        // Gestion des entrées clavier (Saut)
+        document.addEventListener("keydown", function(e) {
+            if ((e.code === "Space" || e.code === "ArrowUp") && dino.grounded) {
+                dino.dy = dino.jumpPower;
+                dino.grounded = false;
+            }
+        });
+
+        // Boucle principale du jeu
+        function update() {
+            // Application de la gravité
+            dino.dy += dino.gravity;
+            dino.y += dino.dy;
+
+            // Collision avec le sol basique (y = 300)
+            if (dino.y > 300) {
+                dino.y = 300;
+                dino.dy = 0;
+                dino.grounded = true;
+            }
+        }
+
+        function draw() {
+            // Effacer l'écran à chaque frame
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Dessiner le sol
+            ctx.fillStyle = "#333333";
+            ctx.fillRect(0, 340, canvas.width, 60);
+
+            // Dessiner le personnage (Dino)
+            ctx.fillStyle = dino.color;
+            ctx.fillRect(dino.x, dino.y, dino.width, dino.height);
+        }
+
+        function loop() {
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        // Lancement de la boucle du jeu
+        loop();
+    </script>
+</body>
+</html>
